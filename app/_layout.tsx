@@ -1,17 +1,38 @@
 import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
+import { Text, View, ImageBackground } from 'react-native';
+import { SafeAreaView, SafeAreaProvider } from 'react-native-safe-area-context';
 import { useFonts } from 'expo-font';
 import { Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
-import { useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import 'react-native-reanimated';
-
 import { useColorScheme } from '@/hooks/useColorScheme';
+import { style } from '@/assets/css/style';
+import { Input } from '@/components/Input';
+import { DisplayTemperature } from '@/components/DisplayTemperature';
+import {
+  UNITS,
+  convertTemperatureTo,
+  getOppositeUnit,
+} from "@/utils/temperature";
+import { ButtonConvert } from "@/components/ButtonConvert";
 
-// Prevent the splash screen from auto-hiding before asset loading is complete.
 SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
+  const [inputValue, setInputValue] = useState(0);
+  const [currentUnit, setCurrentUnit] = useState("°C");
+  const oppositeUnit = getOppositeUnit(currentUnit);
+
+  function getConvertedTemperature() {
+    if (isNaN(inputValue)) {
+      return "";
+    } else {
+      return convertTemperatureTo(inputValue, oppositeUnit).toFixed(1);
+    }
+  }
+
   const colorScheme = useColorScheme();
   const [loaded] = useFonts({
     SpaceMono: require('../assets/fonts/SpaceMono-Regular.ttf'),
@@ -28,12 +49,24 @@ export default function RootLayout() {
   }
 
   return (
-    <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-      <Stack>
-        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-        <Stack.Screen name="+not-found" />
-      </Stack>
-      <StatusBar style="auto" />
-    </ThemeProvider>
+    <SafeAreaProvider>
+      <SafeAreaView style={style.root}>
+        <ImageBackground source={require('@/assets/images/hot.png')}>
+          <View style={style.workspace}>
+            <DisplayTemperature unit={oppositeUnit} temperature={getConvertedTemperature()} />
+            <Input
+              unit={currentUnit}
+              onChange={setInputValue}
+              defaultValue={0} />
+            <ButtonConvert
+              onPress={() => {
+                setCurrentUnit(oppositeUnit);
+              }}
+              unit={currentUnit}
+            />
+          </View>
+        </ImageBackground>
+      </SafeAreaView>
+    </SafeAreaProvider>
   );
 }
